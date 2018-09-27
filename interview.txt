@@ -1,0 +1,255 @@
+
+
+#Topic of scalibility
+1. Horizontal scaling
+2. Vertical Scaling
+3. Caching
+4. Load balacing
+5. Database replication / database partitioning
+
+# High level Trade-offs
+1. Performance vs Scalability
+2. Latency vs throughput
+3. Availability vs Consistency
+
+#CAP theorem
+Consistency, Availability, Partitioning Tolerance => only 2 could achieve at the same time
+Because network is not reliable so we need to maintain P all the time. Software needs to
+make trade offs between consistency and availability. 
+
+CP- may run into timeout, good for business require atomic read and write
+AP- response may not be the latest version of database, good for business needs eventual
+	consistency
+	
+#Consistency Patterns: with multiple copies of the same data, how to synchronize data
+became a problem
+1. Weak Consistency: after write, read may not see it. Work well with streaming, multi-
+players gaming because after a disconnection, user will received whatever data is missing.
+
+2. Eventual consistency: after write, read eventually see it, within miliseconds. Data
+is replicated asynchronously. E.g: DNS, emails => work well with high availability system
+
+3. Strong consistency: after write, read will see it. Data is replicated synchronously. 
+Used in RDMS. Work well with system needs transaction
+
+#Availability patterns: Fail-Over or Replication
+I. Fail-over:
+1. Fail-over active-passive: heart beat is sent between active and passive, passive on 
+standby, if active failed, passive takes over
+
+2. Fail-over active-active : 2 servers share the load between each other. 
+
+Disadvantages: fail over add more hardware and complexity. Potential of loss of data if
+request sent to a dead server
+
+II. Replication:
+1. master - slave replication: master create multiple copies of data into slave, read goes
+to slave node and write goes to master node. Master later on will sync into slaves
+
+2. master - master replication : multiple copies of database that available for both read
+and write. Syncing occurs between database
+
+#DNS : Domain Name Service
+Hiercharical architecture, if cache doesn't know push up one more level, and keep going up
+DNS server introduced latency, IP addresses result is cached in browser memory. DNS 
+providers: CloudFare, Route53
+
+DNS server is also vulnerable to DDos attack
+
+Ways DNS routing the server:
+1. Weighted round robin: balance varying between servers
+2. latency-based
+3. Geolocation-based
+
+
+#CDN: Content Delivery Network => serve static files based on locations, files such as
+CSS/HTML => good for scaling because users received file closed to them and server 
+reduce requests to solve. AWS CloudFront. 
+1. Push CDN: CDN received new content when server changed
+2. Pull CDN: CDN received content as user requested it. content is cached based on TTL (Time-
+to-Live) 
+Sites with heavy traffic need CDN to spread-out recent request. 
+
+=>CDN cost money. 
+
+#Load balancers: 
+Load balancer process:
+1. Receive a request
+2. forward request
+3. wait for response
+4. forward response to client
+
+Load balancers can be implemented with both hardward or software
+SSL termination: Load balancers decrypt incoming requests and encrypt server responses.
+session persistence: Issue a cookies and route the client requests to same instance
+
+Load balancing route traffic with different methods:
+1. Layer 4 load balancing: look at transport layer to route the request.
+2. Layer 7 load balancing: look at application layer, declared in headers 
+
+Disadvantages: could become a performance bottleneck
+
+#Application layer:
+SRP : single responsibility principle advocates for small and autonomous services that
+work together.
+Microservices: decouple web components into mini-services. Pinterest have microservices
+for user profile, follower, feed, search, photo, upload,...
+Disadvantages: microservices can add complexity into deployments and operations
+
+#DataBase:
+I. RDMS: good for transactional database
+ACID:
+Atomic: each transaction is all or nothing
+Consistency: any transaction will bring the database from one valid state to another
+Isolation: executing transactions concurrently has the same results as if the transactions
+were executed serially which means that each write is single thread
+Durability: Once transaction is committed, it remains so
+=> Scale RDMS: master-slave replication, master-master replication, federation (each data
+base will responsible for certain type of data, e.g: PersonDB only contains name, phone,
+address.), sharding (split 1 DB into even smaller DB. E.g: user name starting with A,
+will go to DB1), denormalization (duplicate data), SQL tuning (needs expert to do this)
+
+II. NoSQL: key-value pair store. NoSQL lack of true ACID transaction and favor eventual
+consistency. 
+BASE:
+BA - the system guarantee availability
+Soft State - the state of the system may change over time, even without input
+Eventual consistency - the system will become consistent over a period of time.
+
+#Cache:
+Cache process
+1. Received request
+2. lookup cache
+3. if found result, return to client
+4. if not found, forward request
+
+Application caching => use LRU cache
+Ways to update the cache:
+1. Update through client.
+2. write-through: write data to cache first and then write from cache to DB. 
+
+# 7 communications layers
+# HTTPS requests: GET, PUT, POST, PATCH, DELETE
+
+# TCP v.s. UDP connection type
+
+# REST: Representational state transfer, where client act on a set of resources managed
+by server => allowed what data to fetch. 
+
+# REST v.s. RPC => just different way to form a headers package
+
+#================================SPARK=================================================
+
+1. Apache Spark is fast + in-memory data processing engine
+2. Speed: run computations in memory, support acyclic data flow
+3. provide generality by composing arbitrary operators: map(). reduce(). join()
+4. Good for streaming data via Spark Streaming
+5. Run our first Spark Job: Word Count => count number of each word in a real articles
+6. Resilient Distributed Datasets: the core object to manage Spark data. Spark cluster
+will automatically distribute the data contained in RDD across your cluster and parallelize
+the operations. 
+7. There's only 2 types of RDD operations: Transformation and actions. 
+8. Apply some functions to the data in RDD will create a new RDD
+#transformation
+lines = sc.textField("in/upercase.text")
+linesWithFriday = lines.filter(lambda line: "Friday" in line) # this will create a new RDD
+
+#action: 
+first = linesWithDFriday.first()
+
+9. Spark can use on distributed file system such as Amazon S3 or HDFS
+10. map():
+count = lines.map(lambda line: len(line)) #result in an RDD array of [1,5,3,6,3]
+
+11. RDD is immutable, it can't be changed once created. 
+12. HDFS is a file system that used with hadoop
+13. Do a word count example. Count number of errors in a log files
+filteredVersion = text.filter(lambda line: "male" in line or "female" in line)
+counting = filteredVersion.map(lambda line: line.split()).map(lambda line: (line[1], 1))
+results = counting.reduceByKey(lambda x,y: x + y).collect()
+
+#============================REDUX=====================================================
+1. Actions, reducers, store
+2. Actions are payload which are sent from application to the redux store. They are the 
+only source of information for the store
+3. Reducers specify how the application state change in response to action received
+4. Store: an object with methods to get the state and dispatch actions to perform state
+change.
+
+#=====================Learn introductory courses for Operating system=================
+1. OS is a layer of software that control hardware, hide away the complexity of hardware
+interactions
+2. OS elements:
+Abstractions: process, thread, file, socket, memory page
+Mechanism: create & schedule tasks, open, write, allocate
+Policies: LRU, earliest deadline first (EDF)
+3. Swapping: swap data between DRAM and disk
+4. a process = state of a program when executing loaded in memory (active entity)
+5. a process state is defined by a range of addresses.
+i. text: the code
+ii. data: when the code first load
+iii. heap: dynamically created during execution, store temporary result, read data from file
+iv. stack: grow and shrinks during application, Last In First Out growth., function / object
+6. Process v.s. Thread:
+Each application is a process
+a process could have multiple thread
+
+7. Multithreading: each thread has everything the same but operating on different data input
+E.g.: Thread 1 execute first 20 items of an array and then thread 2 execute next 20 items
+parallelization => speed up the process
+
+8. Mutexes: 2 Treads trying to update a linkedlist at the same time => result in different
+order of a list every time program run. Mutex => a tread locked a mutex. no one else could
+touch it. 
+
+9. Deadlocks: 2 or more competing threads are waiting on each other to complete, however
+none of them could complete because they are both waiting for each other. 
+
+
+JAXB, C3V2parser in side C3Framework code.
+
+
+#==========================Stuff needs to learn and complete===========================
+1. Server side rendering
+2. Authentication with firebase
+3. OS system
+
+#==========================Random Stuff that I know ====================================
+1. Marshalling v.s. Serializing
+Marshalling : move data, does not transform data to another format.
+Serializing: transforming from a native form to another data format, for example: 
+transforming a Java Object to JSON or XML
+
+2. LocalStorage in react is browser database, so if we reload the web application, the 
+state will be reset but the localStorage will be the same. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
